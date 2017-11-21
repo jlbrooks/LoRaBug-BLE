@@ -637,7 +637,7 @@ void maintask(UArg arg0, UArg arg1)
                 LoRaMacMibSetRequestConfirm( &mibReq );
 
                 // Try to read DevEui from flash
-                app_flash_write(APP_FLASH_DEV_EUI, LORAWAN_DEVICE_EUI_LEN, DevEui);
+                app_flash_read(APP_FLASH_DEV_EUI, LORAWAN_DEVICE_EUI_LEN, DevEui);
 
                 DeviceState = DEVICE_STATE_JOIN;
                 break;
