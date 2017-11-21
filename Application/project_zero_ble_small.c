@@ -63,6 +63,7 @@
 #include "util.h"
 
 #include "io.h"
+#include "app_flash.h"
 
 #include "data_service.h"
 
@@ -194,9 +195,6 @@ static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "LoRaBug";
 // Globals used for ATT Response retransmission
 static gattMsgEvent_t *pAttRsp = NULL;
 static uint8_t rspTxRetry = 0;
-
-// Buf for reading flash
-static uint8_t flash_buf[DS_STRING_LEN] = {0,};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -401,18 +399,14 @@ static void ProjectZero_init(void)
   // can generate events (writes received) to the application
   DataService_RegisterAppCBs( &user_Data_ServiceCBs );
 
-  // Placeholder variable for characteristic intialization
-  uint8_t status = SUCCESS;
-  status = osal_snv_read(SNV_ID_DEV_EUI, DS_STRING_LEN, (uint8_t *)flash_buf);
-  if (status != SUCCESS) {
-      //Log_info1("Failure to read flash buf: %d", status);
-      osal_snv_write(SNV_ID_DEV_EUI, DS_STRING_LEN, (uint8_t *)flash_buf);
-  } else {
-      //Log_info1("Read flash buf successfully: %d", flash_buf[0]);
-  }
+  uint8_t string_buf[DS_STRING_LEN] = {0,};
+
+  // Initialize flash memory
+  app_flash_init();
+  app_flash_read(APP_FLASH_DEV_EUI, DS_STRING_LEN, string_buf);
 
   // Initalization of characteristics in Data_Service that can provide data.
-  DataService_SetParameter(DS_STRING_ID, sizeof(flash_buf), flash_buf);
+  DataService_SetParameter(DS_STRING_ID, sizeof(string_buf), string_buf);
 
   // Start the stack in Peripheral mode.
   VOID GAPRole_StartDevice(&user_gapRoleCBs);
@@ -692,7 +686,7 @@ void user_DataService_ValueChangeHandler(char_data_t *pCharData)
       // Needed to copy before log statement, as the holder array remains after
       // the pCharData message has been freed and reused for something else.
       //Log_info3("Value Change msg: %s %s: %s",(IArg)"Data Service",(IArg)"String",(IArg)received_string);
-      osal_snv_write(SNV_ID_DEV_EUI, DS_STRING_LEN-1, (uint8_t *)received_string);
+      app_flash_write(APP_FLASH_DEV_EUI, DS_STRING_LEN-1, (uint8_t *)received_string);
       break;
 
   default:
