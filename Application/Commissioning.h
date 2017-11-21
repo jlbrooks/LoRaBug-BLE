@@ -39,6 +39,7 @@ Maintainer: Miguel Luis and Gregory Cristian
  *         BoardGetUniqueId function
  */
 #define LORAWAN_DEVICE_EUI                          { IEEE_OUI, 0x11, 0x22, 0x33, 0x44, 0x40 }
+#define LORAWAN_DEVICE_EUI_LEN                      8
 
 /*!
  * Application IEEE EUI (big endian)

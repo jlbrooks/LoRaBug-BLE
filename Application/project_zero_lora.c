@@ -10,6 +10,8 @@
 #include <ti/sysbios/knl/Task.h>
 #include <ti/sysbios/knl/Clock.h>
 
+#include <icall.h>
+
 /* TI-RTOS Header files */
 // #include <ti/drivers/I2C.h>
 #include <ti/drivers/PIN.h>
@@ -31,6 +33,7 @@
 
 #include "board.h"
 #include "io.h"
+#include "app_flash.h"
 
 #include "LoRaMac.h"
 
@@ -139,6 +142,14 @@ static TimerEvent_t TxNextPacketTimer;
  * Indicates if a new packet can be sent
  */
 static bool NextTx = true;
+
+/* ICall BLE structures */
+
+// Entity ID globally used to check for source and/or destination of messages
+static ICall_EntityID selfEntity;
+
+// Semaphore globally used to post events to the application thread
+static ICall_Semaphore sem;
 
 /*!
  * Device states
@@ -593,6 +604,9 @@ void maintask(UArg arg0, UArg arg1)
     LoRaMacCallback_t LoRaMacCallbacks;
     MibRequestConfirm_t mibReq;
 
+    // Must register in order to use flash
+    ICall_registerApp(&selfEntity, &sem);
+
     BoardInitMcu( );
     BoardInitPeriph( );
     //printf("# Board initialized\n");
@@ -621,6 +635,9 @@ void maintask(UArg arg0, UArg arg1)
                 mibReq.Type = MIB_PUBLIC_NETWORK;
                 mibReq.Param.EnablePublicNetwork = LORAWAN_PUBLIC_NETWORK;
                 LoRaMacMibSetRequestConfirm( &mibReq );
+
+                // Try to read DevEui from flash
+                app_flash_write(APP_FLASH_DEV_EUI, LORAWAN_DEVICE_EUI_LEN, DevEui);
 
                 DeviceState = DEVICE_STATE_JOIN;
                 break;

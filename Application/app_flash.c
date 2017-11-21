@@ -27,7 +27,7 @@ void app_flash_init() {
 }
 
 void app_flash_write(app_flash_id_t id, uint8 n, const uint8 *buf) {
-    osal_snv_write(id, n, buf);
+    osal_snv_write(id, n, (void *) buf);
 }
 
 void app_flash_read(app_flash_id_t id, uint8 n, uint8 *buf) {

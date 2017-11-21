@@ -14,7 +14,7 @@ typedef enum {
     APP_FLASH_DEV_EUI = BLE_NVID_CUST_START,
 } app_flash_id_t;
 
-void app_flash_init(void);
+void app_flash_init();
 
 void app_flash_write(app_flash_id_t id, uint8 n, const uint8 *buf);
 

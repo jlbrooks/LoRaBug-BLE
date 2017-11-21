@@ -64,6 +64,7 @@
 
 #include "io.h"
 #include "app_flash.h"
+#include "Commissioning.h"
 
 #include "data_service.h"
 
@@ -403,10 +404,10 @@ static void ProjectZero_init(void)
 
   // Initialize flash memory
   app_flash_init();
-  app_flash_read(APP_FLASH_DEV_EUI, DS_STRING_LEN, string_buf);
+  app_flash_read(APP_FLASH_DEV_EUI, LORAWAN_DEVICE_EUI_LEN, string_buf);
 
   // Initalization of characteristics in Data_Service that can provide data.
-  DataService_SetParameter(DS_STRING_ID, sizeof(string_buf), string_buf);
+  DataService_SetParameter(DS_STRING_ID, LORAWAN_DEVICE_EUI_LEN, string_buf);
 
   // Start the stack in Peripheral mode.
   VOID GAPRole_StartDevice(&user_gapRoleCBs);
