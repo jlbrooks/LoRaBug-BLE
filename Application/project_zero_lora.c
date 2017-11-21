@@ -17,6 +17,10 @@
 #include <ti/drivers/UART.h>
 // #include <ti/drivers/Watchdog.h>
 
+#include <Application/pb_decode.h>
+#include <Application/pb_encode.h>
+#include <Application/occulow.pb.h>
+
 /* Board Header files */
 #include "Board_LoRaBUG.h"
 
@@ -170,33 +174,35 @@ struct ComplianceTest_s
  */
 static void PrepareTxFrame( uint8_t port )
 {
-    static uint32_t counter = 0;
-    uint32_t batteryVoltage = 0;
-    uint8_t batteryLevel = 0;
+    size_t message_length;
+    static CountMessage message = CountMessage_init_zero;
+    pb_ostream_t stream;
+    bool status;
+
 
     //printf("# PrepareTxFrame\n");
 
     switch( port )
     {
     case 2:
+        //Prepare sensor readings to send over LoRa
+        stream = pb_ostream_from_buffer(AppData, sizeof(AppData));
 
-        batteryVoltage = BoardGetBatteryVoltage();
-        batteryLevel = BoardGetBatteryLevel();
+        //pc_get_counts(&counter, true);
+        message.count_in = 0;
+        message.count_out = 0;
+        message.batteryVoltage = BoardGetBatteryVoltage();
+        message.batteryLevel = BoardGetBatteryLevel();
+        //uartprintf ("Sending %d/%d\r\nVoltage: %d\r\nLevel: %d\r\n", message.count_in, message.count_out, message.batteryVoltage, message.batteryLevel);
 
-        memset(AppData, '\0', sizeof(AppData));
+        status = pb_encode(&stream, CountMessage_fields, &message);
+        message_length = stream.bytes_written;
 
-        // Copy Counter
-        memcpy(AppData, &counter, sizeof(counter));
-        AppDataSize = sizeof(counter);
-        counter++;
+        AppDataSize = message_length;
 
-        // Copy Battery Voltage
-        memcpy(AppData + AppDataSize, &batteryVoltage, sizeof(batteryVoltage));
-        AppDataSize += sizeof(batteryVoltage);
-
-        // Copy Battery Level
-        memcpy(AppData + AppDataSize, &batteryLevel, sizeof(batteryLevel));
-        AppDataSize += sizeof(batteryLevel);
+        if(!status) {
+            //uartprintf ("Encoding failed: %s\r\n", PB_GET_ERROR(&stream));
+        }
 
         break;
 

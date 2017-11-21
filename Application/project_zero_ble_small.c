@@ -400,7 +400,6 @@ static void ProjectZero_init(void)
 
   // Initalization of characteristics in Data_Service that can provide data.
   DataService_SetParameter(DS_STRING_ID, sizeof(initString), initString);
-  DataService_SetParameter(DS_STREAM_ID, DS_STREAM_LEN, initVal);
 
   // Start the stack in Peripheral mode.
   VOID GAPRole_StartDevice(&user_gapRoleCBs);
@@ -682,12 +681,6 @@ void user_DataService_ValueChangeHandler(char_data_t *pCharData)
       //Log_info3("Value Change msg: %s %s: %s",(IArg)"Data Service",(IArg)"String",(IArg)received_string);
       break;
 
-    case DS_STREAM_ID:
-      //Log_info3("Value Change msg: Data Service Stream: %02x:%02x:%02x...",(IArg)pCharData->data[0],(IArg)pCharData->data[1],(IArg)pCharData->data[2]);
-      // -------------------------
-      // Do something useful with pCharData->data here
-      break;
-
   default:
     return;
   }
@@ -720,17 +713,6 @@ void user_DataService_CfgChangeHandler(char_data_t *pCharData)
   case GATT_CLIENT_CFG_INDICATE:
     configValString = "Indications enabled";
     break;
-  }
-
-  switch (pCharData->paramID)
-  {
-    case DS_STREAM_ID:
-      //Log_info3("CCCD Change msg: %s %s: %s",(IArg)"Data Service",(IArg)"Stream",(IArg)configValString);
-      // -------------------------
-      // Do something useful with configValue here. It tells you whether someone
-      // wants to know the state of this characteristic.
-      // ...
-      break;
   }
 }
 
