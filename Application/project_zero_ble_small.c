@@ -57,6 +57,7 @@
 #include <peripheral.h>
 #include <icall_apimsg.h>
 #include <project_zero_ble_small.h>
+#include <bcomdef.h>
 
 //#include <devinfoservice.h>
 #include "util.h"
@@ -91,6 +92,9 @@
 #define PRZ_CHAR_CHANGE_EVT                   0x0002
 #define PRZ_PERIODIC_EVT                      0x0004
 #define PRZ_CONN_EVT_END_EVT                  0x0008
+
+// Flash defines
+#define SNV_ID_DEV_EUI BLE_NVID_CUST_START
 
 /*********************************************************************
  * TYPEDEFS
@@ -178,18 +182,21 @@ static uint8_t advertData[] =
   DEFAULT_DISCOVERABLE_MODE | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 
   // complete name
-  13,
+  8,
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  'P', 'r', 'o', 'j', 'e', 'c', 't', ' ', 'Z', 'e', 'r', 'o',
+  'L', 'o', 'R', 'a', 'B', 'u', 'g',
 
 };
 
 // GAP GATT Attributes
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Project Zero";
+static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "LoRaBug";
 
 // Globals used for ATT Response retransmission
 static gattMsgEvent_t *pAttRsp = NULL;
 static uint8_t rspTxRetry = 0;
+
+// Buf for reading flash
+static uint8_t flash_buf[DS_STRING_LEN] = {0,};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -395,11 +402,17 @@ static void ProjectZero_init(void)
   DataService_RegisterAppCBs( &user_Data_ServiceCBs );
 
   // Placeholder variable for characteristic intialization
-  uint8_t initVal[40] = {0};
-  uint8_t initString[] = "This is a pretty long string, isn't it!";
+  uint8_t status = SUCCESS;
+  status = osal_snv_read(SNV_ID_DEV_EUI, DS_STRING_LEN, (uint8_t *)flash_buf);
+  if (status != SUCCESS) {
+      //Log_info1("Failure to read flash buf: %d", status);
+      osal_snv_write(SNV_ID_DEV_EUI, DS_STRING_LEN, (uint8_t *)flash_buf);
+  } else {
+      //Log_info1("Read flash buf successfully: %d", flash_buf[0]);
+  }
 
   // Initalization of characteristics in Data_Service that can provide data.
-  DataService_SetParameter(DS_STRING_ID, sizeof(initString), initString);
+  DataService_SetParameter(DS_STRING_ID, sizeof(flash_buf), flash_buf);
 
   // Start the stack in Peripheral mode.
   VOID GAPRole_StartDevice(&user_gapRoleCBs);
@@ -679,6 +692,7 @@ void user_DataService_ValueChangeHandler(char_data_t *pCharData)
       // Needed to copy before log statement, as the holder array remains after
       // the pCharData message has been freed and reused for something else.
       //Log_info3("Value Change msg: %s %s: %s",(IArg)"Data Service",(IArg)"String",(IArg)received_string);
+      osal_snv_write(SNV_ID_DEV_EUI, DS_STRING_LEN-1, (uint8_t *)received_string);
       break;
 
   default:
